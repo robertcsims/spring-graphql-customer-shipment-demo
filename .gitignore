@@ -1,0 +1,23 @@
+# Build
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Runtime data
+data/
+derby.log
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets (none here but good practice)
+*.env
+*.pem
