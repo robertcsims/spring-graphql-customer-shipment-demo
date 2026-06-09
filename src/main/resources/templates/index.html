@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">GraphQL Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .hero { background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%); color: white; padding: 3rem 0; }
+        .query-card { font-family: ui-monospace, monospace; font-size: 0.85rem; background: #f1f3f5; }
+        .nav-pills .nav-link.active { background-color: #0d6efd; }
+        .demo-badge { font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">GraphQL + Spring Demo</a>
+        <span class="badge bg-success demo-badge">Built from Schema Spec</span>
+    </div>
+</nav>
+
+<div class="hero">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold" th:text="${title}">GraphQL Relational Data Demo</h1>
+        <p class="lead mb-4" th:text="${subtitle}">Built rapidly from a schema specification using Spring for GraphQL</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/graphiql" target="_blank" class="btn btn-light btn-lg px-4">
+                <strong>Launch GraphiQL →</strong>
+            </a>
+            <a href="#demo-queries" class="btn btn-outline-light btn-lg px-4">See Powerful Queries</a>
+        </div>
+        <p class="mt-2 small">
+            <strong>Fastest start:</strong> <code>./demo.sh</code> (demo mode, no login)
+        </p>
+        <p class="mt-3 small opacity-75">No additional setup required • Data persists across restarts</p>
+    </div>
+</div>
+
+<div class="container my-5">
+    <!-- Value Proposition -->
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">One Round-Trip Power</h5>
+                    <p class="card-text">Fetch a complete customer hierarchy — including contacts, locations, shipments, and service offerings — in a <strong>single GraphQL query</strong>. Traditional REST would require 5+ separate calls.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Client-Driven Precision</h5>
+                    <p class="card-text">The client decides exactly which fields and relationships to load. No more over-fetching or under-fetching. Pagination, sorting, and filtering are first-class citizens.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Rapid Implementation</h5>
+                    <p class="card-text">This fully functional, production-pattern application (entities, services, security, tests, GraphQL resolvers) was implemented directly from a textual schema description in a short time using modern Spring for GraphQL.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="card mb-5 shadow-sm">
+        <div class="card-header bg-white">
+            <h4 class="mb-0">Quick Start for This Demo</h4>
+        </div>
+        <div class="card-body">
+            <ol class="mb-0">
+                <li class="mb-2">Click <strong>"Launch GraphiQL"</strong> above (opens in new tab)</li>
+                <li class="mb-2">If prompted for credentials (Basic Auth), use: <code>admin / admin123</code></li>
+                <li class="mb-2">Paste one of the powerful example queries below</li>
+                <li>Observe: <strong>complex relational data returned in one network request</strong></li>
+            </ol>
+            <div class="alert alert-info mt-3 mb-0 py-2 small">
+                <strong>Pro tip for leadership:</strong> Compare this to how many REST endpoints and joins would be needed for the same data shape.
+            </div>
+        </div>
+    </div>
+
+    <!-- Impressive Queries -->
+    <h3 id="demo-queries" class="mb-3">Signature Demo Queries</h3>
+    <p class="text-muted">Copy and paste these directly into GraphiQL. They best illustrate GraphQL's advantages for relational domains.</p>
+
+    <div class="accordion" id="queryAccordion">
+
+        <!-- Query 1: Full Hierarchy -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#query1">
+                    1. Complete Customer Hierarchy (The "Wow" Query)
+                </button>
+            </h2>
+            <div id="query1" class="accordion-collapse collapse show" data-bs-parent="#queryAccordion">
+                <div class="accordion-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">This single query traverses 5 tables with multiple relationships.</small>
+                        <button onclick="runInGraphiQL(fullHierarchyQuery)" class="btn btn-sm btn-outline-primary">▶ Run in GraphiQL</button>
+                    </div>
+                    <pre class="query-card p-3 rounded"><code>query FullRelationalHierarchy {
+  customer(id: 1) {
+    id
+    entityName
+    type
+    contacts {
+      firstName
+      lastName
+      email
+      phone
+    }
+    shipmentLocations {
+      name
+      city
+      state
+      zip
+      gateCode
+    }
+    shipments {
+      activity
+      itemDescription
+      weight
+      dimensions
+      contact { lastName email }
+      shipmentLocation { name city }
+      serviceOffering { description typeCd }
+    }
+  }
+}</code></pre>
+                    <small class="text-muted">In REST this would typically require 4–6 separate API calls + client-side assembly.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query 2: Paginated + Filtered -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#query2">
+                    2. Paginated + Filtered Shipments with Sorting
+                </button>
+            </h2>
+            <div id="query2" class="accordion-collapse collapse" data-bs-parent="#queryAccordion">
+                <div class="accordion-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Client-controlled pagination, filtering and sorting.</small>
+                        <button onclick="runInGraphiQL(filteredShipmentsQuery)" class="btn btn-sm btn-outline-primary">▶ Run in GraphiQL</button>
+                    </div>
+                    <pre class="query-card p-3 rounded"><code>query FilteredPaginatedShipments {
+  shipments(
+    filter: { activity: PICKUP, minWeight: 10 }
+    page: 0
+    size: 5
+    sort: ["-weight"]
+  ) {
+    content {
+      id
+      itemDescription
+      weight
+      activity
+      customer { entityName }
+    }
+    totalElements
+    totalPages
+  }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query 3: Nested with arguments -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#query3">
+                    3. Customer + Paginated Shipments (Nested Arguments)
+                </button>
+            </h2>
+            <div id="query3" class="accordion-collapse collapse" data-bs-parent="#queryAccordion">
+                <div class="accordion-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Even nested lists support pagination &amp; sorting arguments.</small>
+                        <button onclick="runInGraphiQL(nestedPaginationQuery)" class="btn btn-sm btn-outline-primary">▶ Run in GraphiQL</button>
+                    </div>
+                    <pre class="query-card p-3 rounded"><code>query CustomerWithLimitedShipments {
+  customer(id: 1) {
+    entityName
+    shipments(page: 0, size: 2, sort: ["-weight"]) {
+      id
+      weight
+      itemDescription
+      serviceOffering { description }
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-4">
+        <a href="/graphiql" target="_blank" class="btn btn-primary btn-lg">Open GraphiQL Now</a>
+        <span class="ms-3 text-muted">Also try the Docs tab on the right inside GraphiQL to see full schema introspection.</span>
+    </div>
+
+    <div class="mt-3">
+        <small class="text-muted">Tip: Use the "▶ Run in GraphiQL" buttons below to pre-load impressive queries directly into the editor.</small>
+    </div>
+</div>
+
+<footer class="container mt-5 pt-4 border-top text-center text-muted small">
+    <p>
+        This application was implemented from a detailed schema description (5 tables + relationships + pagination/filtering requirements).<br>
+        It demonstrates both the strength of GraphQL for complex domains and the speed at which modern tooling + AI assistance can deliver production-grade prototypes.
+    </p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Pre-defined queries for one-click loading into GraphiQL
+    const fullHierarchyQuery = `query FullRelationalHierarchy {
+  customer(id: 1) {
+    id
+    entityName
+    type
+    contacts {
+      firstName
+      lastName
+      email
+      phone
+    }
+    shipmentLocations {
+      name
+      city
+      state
+      zip
+      gateCode
+    }
+    shipments {
+      activity
+      itemDescription
+      weight
+      dimensions
+      contact { lastName email }
+      shipmentLocation { name city }
+      serviceOffering { description typeCd }
+    }
+  }
+}`;
+
+    const filteredShipmentsQuery = `query FilteredPaginatedShipments {
+  shipments(
+    filter: { activity: PICKUP, minWeight: 10 }
+    page: 0
+    size: 5
+    sort: ["-weight"]
+  ) {
+    content {
+      id
+      itemDescription
+      weight
+      activity
+      customer { entityName }
+    }
+    totalElements
+    totalPages
+  }
+}`;
+
+    const nestedPaginationQuery = `query CustomerWithLimitedShipments {
+  customer(id: 1) {
+    entityName
+    shipments(page: 0, size: 2, sort: ["-weight"]) {
+      id
+      weight
+      itemDescription
+      serviceOffering { description }
+    }
+  }
+}`;
+
+    function runInGraphiQL(query) {
+        const encoded = encodeURIComponent(query);
+        // Spring GraphQL's GraphiQL supports the ?query= parameter to pre-fill the editor
+        window.open(`/graphiql?query=${encoded}`, '_blank');
+    }
+
+    // Optional: Keyboard hint
+    console.log('%c[Demo] GraphiQL preload ready. Use the ▶ buttons on the page.', 'color:#6c757d');
+</script>
+</body>
+</html>
