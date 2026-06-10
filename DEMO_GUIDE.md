@@ -5,17 +5,13 @@ Show Senior Leadership how quickly and powerfully a rich relational domain can b
 
 ## Recommended Start Command (Smoothest Experience)
 
-<<<<<<< HEAD
 **Easiest (and recommended for high-stakes demos):**
-=======
 **Easiest:**
->>>>>>> origin/main
 
 ```bash
 ./demo.sh
 ```
 
-<<<<<<< HEAD
 This launches the application in demo mode with extremely clean logs and **no authentication friction**.
 
 **Critical for professionalism:** Watch the console. The new static first screen at `http://localhost:8080` is served **as soon as the web server binds** (very early). It features a live readiness widget that polls `/actuator/health` and transitions from "initializing" to "ready".
@@ -23,17 +19,14 @@ This launches the application in demo mode with extremely clean logs and **no au
 You can open `http://localhost:8080` immediately — no more 404 Whitelabel pages. The page is self-contained, beautiful, and designed to impress at the highest levels (President / EU / boardroom).
 
 Alternative (explicit):
-=======
 This is a one-line wrapper that starts the app in demo mode (no auth, clean logs).
 
 Alternative (explicit):
 
->>>>>>> origin/main
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
-<<<<<<< HEAD
 `application-demo.properties` ensures:
 - Zero auth prompts
 - Minimal framework noise in logs
@@ -41,12 +34,10 @@ mvn spring-boot:run -Dspring-boot.run.profiles=demo
 - Professional readiness experience
 
 Wait for the "Started CustomerShipmentGraphqlApplication..." line for full backend capabilities, but the landing experience is available far earlier.
-=======
 This activates `application-demo.properties` which:
 - Turns off authentication (no login popups)
 - Keeps logging clean
 - Still uses persistent Derby database
->>>>>>> origin/main
 
 Alternative (if you want to show security too):
 ```bash
@@ -66,7 +57,6 @@ Then use credentials `admin` / `admin123` when GraphiQL prompts.
 - Click **"Launch GraphiQL"**.
 
 ### 2. The "Wow" Query – Full Hierarchy (3–4 min)
-<<<<<<< HEAD
 Paste this query (it's pre-documented on the landing page). Note: it is deliberately **data-driven** — it locates the rich customer by a stable business attribute (`entityNameContains`) instead of a hard-coded surrogate database ID. IDs in real systems are auto-generated and can shift; filters on domain values do not.
 
 ```graphql
@@ -91,7 +81,6 @@ query FullRelationalHierarchy {
     }
     totalElements
     totalPages
-=======
 Paste this query (it's pre-documented on the landing page):
 
 ```graphql
@@ -111,7 +100,6 @@ query FullRelationalHierarchy {
       shipmentLocation { name city }
       serviceOffering { description typeCd }
     }
->>>>>>> origin/main
   }
 }
 ```
@@ -119,10 +107,7 @@ query FullRelationalHierarchy {
 **Talking points:**
 - "One single HTTP request returned data from **five different tables** with multiple relationships."
 - "In a traditional REST architecture this would require at least 5 separate API calls plus client-side stitching."
-<<<<<<< HEAD
 - "The query uses a filter on the business name rather than a brittle hard-coded ID — this is the correct, maintainable pattern."
-=======
->>>>>>> origin/main
 - Point out how the client shaped exactly the data it wanted — no more, no less.
 - Open the **Network tab** in browser dev tools before running to visually prove only **one** request was made.
 
@@ -167,7 +152,6 @@ query ShowSchema {
 - "Tools and clients can explore the API without separate documentation."
 
 ### 5. Mutations (optional but impressive) (1–2 min)
-<<<<<<< HEAD
 Mutations accept IDs that you normally obtain from prior queries (data-driven). Service offerings are small reference data (usually stable low IDs); for the customer, use an ID returned from a `customers` or `customer` query.
 
 ```graphql
@@ -180,13 +164,11 @@ mutation CreateShipment {
     customerId: 1
     # service offerings are reference data (created first): 1=STD, 2=EXP, 3=LTL, 4=AIR
     serviceOfferingId: 2
-=======
 ```graphql
 mutation CreateShipment {
   createShipment(input: {
     customerId: 2
     serviceOfferingId: 1
->>>>>>> origin/main
     itemDescription: "Demo executive gift"
     weight: 1.5
     dimensions: "8x6x4"
@@ -200,11 +182,8 @@ mutation CreateShipment {
 }
 ```
 
-<<<<<<< HEAD
 Run it, then immediately re-run a customer hierarchy (filter form) query to show the new shipment appeared in the graph.
-=======
 Run it, then immediately re-run the customer hierarchy query to show the new data appeared.
->>>>>>> origin/main
 
 ### 6. Close – The Velocity Story (1 min)
 - "From a written schema spec (5 tables + relationships + pagination/filtering requirements) to a fully tested, secured, production-pattern application with GraphiQL in a very short time."

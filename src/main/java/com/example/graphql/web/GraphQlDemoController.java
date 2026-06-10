@@ -29,6 +29,12 @@ public class GraphQlDemoController {
         try {
             Long explicitCustId = extractCustomerId(query);
 
+            // Handle GraphQL introspection queries so that the "Docs" / schema explorer
+            // in GraphiQL (menu option) can fetch the schema without errors.
+            if (isIntrospectionQuery(query)) {
+                return buildIntrospectionResponse();
+            }
+
             if (explicitCustId != null) {
                 // Explicit lookup by id is still supported (data-driven via parsed value).
                 // Returns the matching rich canned hierarchy for the 4 seeded demo customers.
@@ -76,7 +82,8 @@ public class GraphQlDemoController {
                     data.put("createShipment", simulateCreateShipment(query));
                 }
             } else {
-                // Fallback / introspection style
+                // Unknown query — return a safe small response so the endpoint never 500s.
+                // Real introspection is handled explicitly above.
                 data.put("serviceOfferings", buildServiceOfferings());
             }
             response.put("data", data);
@@ -97,6 +104,173 @@ public class GraphQlDemoController {
             try { return Long.parseLong(m.group(1)); } catch (NumberFormatException ignored) {}
         }
         return null;
+    }
+
+    private boolean isIntrospectionQuery(String query) {
+        if (query == null) return false;
+        String q = query.toLowerCase();
+        return q.contains("__schema") || q.contains("__type") || q.contains("introspectionquery");
+    }
+
+    /**
+     * Returns a minimal but valid introspection response so that GraphiQL's
+     * schema/docs explorer (the menu option) can fetch and display the available
+     * types and operations without throwing "Error fetching schema".
+     *
+     * This describes the main demo types and operations used by the landing page
+     * preloaded queries and mutations.
+     */
+    private Map<String, Object> buildIntrospectionResponse() {
+        Map<String, Object> response = new LinkedHashMap<>();
+        Map<String, Object> data = new LinkedHashMap<>();
+        Map<String, Object> schema = new LinkedHashMap<>();
+
+        // Root types
+        schema.put("queryType", Map.of("name", "Query"));
+        schema.put("mutationType", Map.of("name", "Mutation"));
+        schema.put("subscriptionType", null);
+
+        // Types we expose in the demo
+        List<Map<String, Object>> types = new ArrayList<>();
+
+        // Query type
+        types.add(Map.of(
+            "kind", "OBJECT",
+            "name", "Query",
+            "description", "Root queries for the demo",
+            "fields", Arrays.asList(
+                field("customer", "Get one customer by id", "Customer", arg("id", "ID!")),
+                field("customers", "Paginated list of customers with optional filter", "CustomerConnection",
+                      arg("filter", "CustomerFilter"), arg("page", "Int"), arg("size", "Int"), arg("sort", "[String]")),
+                field("shipments", "Paginated list of shipments with optional filter", "ShipmentConnection",
+                      arg("filter", "ShipmentFilter"), arg("page", "Int"), arg("size", "Int"), arg("sort", "[String]")),
+                field("serviceOfferings", "List of available service offerings", "[ServiceOffering]")
+            ),
+            "interfaces", Collections.emptyList()
+        ));
+
+        // Mutation type
+        types.add(Map.of(
+            "kind", "OBJECT",
+            "name", "Mutation",
+            "description", "Root mutations for the demo",
+            "fields", Arrays.asList(
+                field("createCustomer", "Create a new customer", "Customer", arg("input", "CreateCustomerInput!")),
+                field("updateCustomer", "Update an existing customer", "Customer",
+                      arg("id", "ID!"), arg("entityName", "String"), arg("type", "CustomerType")),
+                field("createShipment", "Create a new shipment for a customer", "Shipment", arg("input", "CreateShipmentInput!"))
+            ),
+            "interfaces", Collections.emptyList()
+        ));
+
+        // Customer type (simplified)
+        types.add(Map.of(
+            "kind", "OBJECT",
+            "name", "Customer",
+            "description", "A customer (business or personal)",
+            "fields", Arrays.asList(
+                field("id", null, "ID"),
+                field("entityName", null, "String"),
+                field("type", null, "CustomerType"),
+                field("contacts", null, "[Contact]"),
+                field("shipmentLocations", null, "[ShipmentLocation]"),
+                field("shipments", null, "[Shipment]")
+            ),
+            "interfaces", Collections.emptyList()
+        ));
+
+        // Shipment
+        types.add(Map.of(
+            "kind", "OBJECT",
+            "name", "Shipment",
+            "description", "A shipment belonging to a customer",
+            "fields", Arrays.asList(
+                field("id", null, "ID"),
+                field("itemDescription", null, "String"),
+                field("weight", null, "Float"),
+                field("dimensions", null, "String"),
+                field("activity", null, "ActivityType"),
+                field("customer", null, "Customer"),
+                field("contact", null, "Contact"),
+                field("shipmentLocation", null, "ShipmentLocation"),
+                field("serviceOffering", null, "ServiceOffering")
+            ),
+            "interfaces", Collections.emptyList()
+        ));
+
+        // ServiceOffering
+        types.add(Map.of(
+            "kind", "OBJECT",
+            "name", "ServiceOffering",
+            "description", "Reference data for shipping methods",
+            "fields", Arrays.asList(
+                field("id", null, "ID"),
+                field("description", null, "String"),
+                field("typeCd", null, "String")
+            ),
+            "interfaces", Collections.emptyList()
+        ));
+
+        // Contact, ShipmentLocation (minimal for docs)
+        types.add(Map.of(
+            "kind", "OBJECT", "name", "Contact",
+            "fields", Arrays.asList(field("id",null,"ID"), field("firstName",null,"String"), field("lastName",null,"String")),
+            "interfaces", Collections.emptyList()
+        ));
+        types.add(Map.of(
+            "kind", "OBJECT", "name", "ShipmentLocation",
+            "fields", Arrays.asList(field("id",null,"ID"), field("name",null,"String"), field("city",null,"String")),
+            "interfaces", Collections.emptyList()
+        ));
+
+        // Enums
+        types.add(Map.of(
+            "kind", "ENUM", "name", "CustomerType",
+            "enumValues", Arrays.asList(
+                Map.of("name", "BUSINESS", "description", null),
+                Map.of("name", "PERSONAL", "description", null)
+            )
+        ));
+        types.add(Map.of(
+            "kind", "ENUM", "name", "ActivityType",
+            "enumValues", Arrays.asList(
+                Map.of("name", "PICKUP", "description", null),
+                Map.of("name", "DELIVERY", "description", null)
+            )
+        ));
+
+        // Scalars and connection placeholders (very minimal)
+        types.add(Map.of("kind", "SCALAR", "name", "ID"));
+        types.add(Map.of("kind", "SCALAR", "name", "String"));
+        types.add(Map.of("kind", "SCALAR", "name", "Int"));
+        types.add(Map.of("kind", "SCALAR", "name", "Float"));
+        types.add(Map.of("kind", "OBJECT", "name", "CustomerConnection",
+            "fields", Arrays.asList(field("content", null, "[Customer]"), field("totalElements", null, "Int"))));
+        types.add(Map.of("kind", "OBJECT", "name", "ShipmentConnection",
+            "fields", Arrays.asList(field("content", null, "[Shipment]"), field("totalElements", null, "Int"))));
+
+        schema.put("types", types);
+
+        data.put("__schema", schema);
+        response.put("data", data);
+        return response;
+    }
+
+    private Map<String, Object> field(String name, String desc, String typeName, Map<String, Object>... args) {
+        Map<String, Object> f = new LinkedHashMap<>();
+        f.put("name", name);
+        f.put("description", desc);
+        f.put("type", Map.of("name", typeName, "kind", "OBJECT")); // simplified
+        if (args.length > 0) {
+            f.put("args", Arrays.asList(args));
+        } else {
+            f.put("args", Collections.emptyList());
+        }
+        return f;
+    }
+
+    private Map<String, Object> arg(String name, String typeName) {
+        return Map.of("name", name, "type", Map.of("name", typeName, "kind", "NON_NULL"));
     }
 
     /** Return one of the 4 rich demo hierarchies by the (parsed) numeric id. Falls back to first. */

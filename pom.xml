@@ -89,7 +89,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-<<<<<<< HEAD
                 <executions>
                     <execution>
                         <goals>
@@ -101,8 +100,6 @@
                     <mainClass>com.example.graphql.CustomerShipmentGraphqlApplication</mainClass>
                     <classifier>exec</classifier>
                 </configuration>
-=======
->>>>>>> origin/main
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
