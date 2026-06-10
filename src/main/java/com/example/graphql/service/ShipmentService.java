@@ -24,4 +24,9 @@ public interface ShipmentService {
     Shipment updateShipment(Long id, String itemDescription, BigDecimal weight, String dimensions, ActivityType activity);
 
     void deleteShipment(Long id);
+
+    /**
+     * Initializes lazy associations on an already-loaded shipment for GraphQL nested field resolution.
+     */
+    void initializeShipmentGraph(Shipment shipment);
 }

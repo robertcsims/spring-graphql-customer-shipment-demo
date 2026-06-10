@@ -3,6 +3,7 @@ package com.example.graphql.service;
 import com.example.graphql.domain.*;
 import com.example.graphql.repository.*;
 import com.example.graphql.repository.ShipmentSpecifications;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -63,7 +64,9 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
 
         customer.addShipment(shipment);
-        return shipmentRepository.save(shipment);
+        Shipment saved = shipmentRepository.save(shipment);
+        initializeShipmentGraph(saved);
+        return saved;
     }
 
     @Override
@@ -102,5 +105,17 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Transactional
     public void deleteShipment(Long id) {
         shipmentRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void initializeShipmentGraph(Shipment shipment) {
+        if (shipment == null) {
+            return;
+        }
+        Hibernate.initialize(shipment.getCustomer());
+        Hibernate.initialize(shipment.getContact());
+        Hibernate.initialize(shipment.getShipmentLocation());
+        Hibernate.initialize(shipment.getServiceOffering());
     }
 }

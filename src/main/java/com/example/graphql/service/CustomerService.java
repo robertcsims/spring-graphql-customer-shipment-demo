@@ -29,4 +29,9 @@ public interface CustomerService {
      * Returns customer with contacts, locations and shipments initialized (avoids LazyInitializationException in GraphQL nested resolvers).
      */
     Customer getCustomerWithAllRelations(Long id);
+
+    /**
+     * Initializes lazy collections on an already-loaded customer for GraphQL nested field resolution.
+     */
+    void initializeCustomerGraph(Customer customer);
 }

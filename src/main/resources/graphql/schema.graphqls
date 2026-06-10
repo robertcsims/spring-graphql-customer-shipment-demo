@@ -1,0 +1,112 @@
+type Query {
+    customer(id: ID!): Customer
+    customers(filter: CustomerFilter, page: Int, size: Int, sort: [String]): CustomerPage
+    shipments(filter: ShipmentFilter, page: Int, size: Int, sort: [String]): ShipmentPage
+    serviceOfferings: [ServiceOffering!]!
+}
+
+type Mutation {
+    createCustomer(input: CreateCustomerInput!): Customer!
+    updateCustomer(id: ID!, entityName: String, type: CustomerType): Customer!
+    deleteCustomer(id: ID!): Boolean!
+    createShipment(input: CreateShipmentInput!): Shipment!
+    updateShipment(id: ID!, itemDescription: String, weight: Float, dimensions: String, activity: ActivityType): Shipment!
+    deleteShipment(id: ID!): Boolean!
+}
+
+type CustomerPage {
+    content: [Customer!]!
+    totalElements: Int!
+    totalPages: Int!
+}
+
+type ShipmentPage {
+    content: [Shipment!]!
+    totalElements: Int!
+    totalPages: Int!
+}
+
+type Customer {
+    id: ID!
+    entityName: String!
+    type: CustomerType!
+    contacts: [Contact!]!
+    shipmentLocations: [ShipmentLocation!]!
+    shipments(page: Int, size: Int, sort: [String]): [Shipment!]!
+}
+
+type Contact {
+    id: ID!
+    firstName: String!
+    lastName: String!
+    phone: String
+    email: String
+}
+
+type ShipmentLocation {
+    id: ID!
+    name: String!
+    addressLine1: String
+    addressLine2: String
+    city: String
+    state: String
+    zip: String
+    locationInstructions: String
+    gateCode: String
+}
+
+type Shipment {
+    id: ID!
+    itemDescription: String
+    weight: Float
+    dimensions: String
+    activity: ActivityType!
+    customer: Customer
+    contact: Contact
+    shipmentLocation: ShipmentLocation
+    serviceOffering: ServiceOffering
+}
+
+type ServiceOffering {
+    id: ID!
+    description: String!
+    typeCd: String!
+}
+
+input CustomerFilter {
+    type: CustomerType
+    entityNameContains: String
+}
+
+input ShipmentFilter {
+    customerId: ID
+    activity: ActivityType
+    minWeight: Float
+    itemDescriptionContains: String
+}
+
+input CreateCustomerInput {
+    entityName: String!
+    type: CustomerType!
+}
+
+input CreateShipmentInput {
+    customerId: ID!
+    contactId: ID
+    shipmentLocationId: ID
+    serviceOfferingId: ID
+    itemDescription: String
+    weight: Float
+    dimensions: String
+    activity: ActivityType!
+}
+
+enum CustomerType {
+    BUSINESS
+    PERSONAL
+}
+
+enum ActivityType {
+    PICKUP
+    DELIVERY
+}

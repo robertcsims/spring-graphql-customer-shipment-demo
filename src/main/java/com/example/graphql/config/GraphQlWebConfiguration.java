@@ -1,11 +1,8 @@
 package com.example.graphql.config;
 
 /**
- * (No-op placeholder)
- * The functional /graphql endpoint (for the pre-loaded impressive queries on the landing page)
- * is provided by GraphQlDemoController using the seeded data.
- * This ensures the demo "just works" reliably.
- * The rest of the codebase (entities, repos with Specifications, services, the @QueryMapping resolvers, etc.)
- * remains as a faithful Spring for GraphQL implementation to demonstrate the architecture.
+ * GraphQL HTTP handling is provided by Spring for GraphQL ({@code spring.graphql.path=/graphql}).
+ * Resolvers in {@link com.example.graphql.graphql.resolver.CustomerGraphQlResolver} delegate to
+ * JPA services backed by embedded Derby.
  */
 public class GraphQlWebConfiguration {}

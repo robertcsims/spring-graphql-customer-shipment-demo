@@ -4,11 +4,13 @@ import com.example.graphql.domain.*;
 import com.example.graphql.graphql.dto.CreateCustomerInput;
 import com.example.graphql.graphql.dto.CreateShipmentInput;
 import com.example.graphql.graphql.dto.CustomerFilter;
+import com.example.graphql.graphql.dto.CustomerPage;
 import com.example.graphql.graphql.dto.ShipmentFilter;
+import com.example.graphql.graphql.dto.ShipmentPage;
 import com.example.graphql.service.CustomerService;
 import com.example.graphql.service.ServiceOfferingService;
 import com.example.graphql.service.ShipmentService;
-import org.springframework.data.domain.Page;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -17,20 +19,12 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 /**
- * Central GraphQL resolver.
- *
- * This class was implemented rapidly from the original schema specification.
- * It showcases the strength of Spring for GraphQL:
- *   • Root queries + mutations
- *   • @SchemaMapping for deep, client-controlled relationships (the core GraphQL advantage)
- *   • First-class support for pagination, sorting, and input-based filtering
- *
- * A complex relational domain (5 tables, multiple FKs, full hierarchy traversal)
- * was turned into a production-quality, flexible GraphQL API in a very short time.
+ * Central GraphQL resolver backed by Derby persistence via JPA services.
  */
 @Controller
 public class CustomerGraphQlResolver {
@@ -50,41 +44,50 @@ public class CustomerGraphQlResolver {
     // ========== ROOT QUERIES ==========
 
     @QueryMapping
+    @Transactional(readOnly = true)
     public Customer customer(@Argument Long id) {
-        // Use the relation-initialized version so deep nested GraphQL queries work reliably
         return customerService.getCustomerWithAllRelations(id);
     }
 
     @QueryMapping
-    public Page<Customer> customers(@Argument CustomerFilter filter,
-                                    @Argument Integer page,
-                                    @Argument Integer size,
-                                    @Argument List<String> sort) {
+    @Transactional(readOnly = true)
+    public CustomerPage customers(@Argument CustomerFilter filter,
+                                  @Argument Integer page,
+                                  @Argument Integer size,
+                                  @Argument List<String> sort) {
         Pageable pageable = buildPageable(page, size, sort);
         CustomerType type = (filter != null) ? filter.type() : null;
         String nameTerm = (filter != null) ? filter.entityNameContains() : null;
-        return customerService.getCustomersFiltered(type, nameTerm, pageable);
+        var result = customerService.getCustomersFiltered(type, nameTerm, pageable);
+        // Eagerly initialize nested collections while the session is open so deep
+        // GraphQL selections work with open-in-view disabled.
+        result.getContent().forEach(customerService::initializeCustomerGraph);
+        return CustomerPage.from(result);
     }
 
     @QueryMapping
-    public Page<Shipment> shipments(@Argument ShipmentFilter filter,
-                                    @Argument Integer page,
-                                    @Argument Integer size,
-                                    @Argument List<String> sort) {
+    @Transactional(readOnly = true)
+    public ShipmentPage shipments(@Argument ShipmentFilter filter,
+                                  @Argument Integer page,
+                                  @Argument Integer size,
+                                  @Argument List<String> sort) {
         Pageable pageable = buildPageable(page, size, sort);
         Long custId = filter != null ? filter.customerId() : null;
         ActivityType act = filter != null ? filter.activity() : null;
         var minW = filter != null ? filter.minWeight() : null;
         String descTerm = filter != null ? filter.itemDescriptionContains() : null;
-        return shipmentService.getShipmentsFiltered(custId, act, minW, descTerm, pageable);
+        var result = shipmentService.getShipmentsFiltered(custId, act, minW, descTerm, pageable);
+        result.getContent().forEach(shipmentService::initializeShipmentGraph);
+        return ShipmentPage.from(result);
     }
 
     @QueryMapping
+    @Transactional(readOnly = true)
     public List<ServiceOffering> serviceOfferings() {
         return serviceOfferingService.getAllServiceOfferings();
     }
 
-    // ========== MUTATIONS (demonstrate full CRUD via GraphQL) ==========
+    // ========== MUTATIONS ==========
 
     @MutationMapping
     public Customer createCustomer(@Argument CreateCustomerInput input) {
@@ -133,49 +136,61 @@ public class CustomerGraphQlResolver {
         return true;
     }
 
-    // ========== NESTED RESOLVERS (the magic of GraphQL - fetch only what you need, deep relations in 1 roundtrip) ==========
+    // ========== NESTED RESOLVERS ==========
 
     @SchemaMapping(typeName = "Customer", field = "contacts")
+    @Transactional(readOnly = true)
     public List<Contact> contacts(Customer customer) {
-        // In a real high-scale system use DataLoader + batching here to avoid N+1
+        Hibernate.initialize(customer.getContacts());
         return customer.getContacts();
     }
 
     @SchemaMapping(typeName = "Customer", field = "shipmentLocations")
+    @Transactional(readOnly = true)
     public List<ShipmentLocation> shipmentLocations(Customer customer) {
+        Hibernate.initialize(customer.getShipmentLocations());
         return customer.getShipmentLocations();
     }
 
     @SchemaMapping(typeName = "Customer", field = "shipments")
+    @Transactional(readOnly = true)
     public List<Shipment> shipments(Customer customer,
                                     @Argument Integer page,
                                     @Argument Integer size,
                                     @Argument List<String> sort) {
-        // Support optional sub-pagination / sorting from the client when requesting customer { shipments(...) }
         if (page != null || size != null || (sort != null && !sort.isEmpty())) {
             Pageable pageable = buildPageable(page, size, sort);
             return shipmentService.getShipmentsFiltered(customer.getId(), null, null, null, pageable).getContent();
         }
+        customerService.initializeCustomerGraph(customer);
         return customer.getShipments();
     }
 
     @SchemaMapping(typeName = "Shipment", field = "customer")
+    @Transactional(readOnly = true)
     public Customer customerForShipment(Shipment shipment) {
+        Hibernate.initialize(shipment.getCustomer());
         return shipment.getCustomer();
     }
 
     @SchemaMapping(typeName = "Shipment", field = "contact")
+    @Transactional(readOnly = true)
     public Contact contactForShipment(Shipment shipment) {
+        Hibernate.initialize(shipment.getContact());
         return shipment.getContact();
     }
 
     @SchemaMapping(typeName = "Shipment", field = "shipmentLocation")
+    @Transactional(readOnly = true)
     public ShipmentLocation shipmentLocationForShipment(Shipment shipment) {
+        Hibernate.initialize(shipment.getShipmentLocation());
         return shipment.getShipmentLocation();
     }
 
     @SchemaMapping(typeName = "Shipment", field = "serviceOffering")
+    @Transactional(readOnly = true)
     public ServiceOffering serviceOfferingForShipment(Shipment shipment) {
+        Hibernate.initialize(shipment.getServiceOffering());
         return shipment.getServiceOffering();
     }
 

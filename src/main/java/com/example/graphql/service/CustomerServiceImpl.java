@@ -27,8 +27,9 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     @Transactional
     public Customer createCustomer(String entityName, CustomerType type) {
-        Customer customer = new Customer(entityName, type);
-        return customerRepository.save(customer);
+        Customer customer = customerRepository.save(new Customer(entityName, type));
+        initializeCustomerGraph(customer);
+        return customer;
     }
 
     @Override
@@ -55,7 +56,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found with id: " + id));
         if (entityName != null) customer.setEntityName(entityName);
         if (type != null) customer.setType(type);
-        return customerRepository.save(customer);
+        customerRepository.save(customer);
+        return getCustomerWithAllRelations(id);
     }
 
     @Override
@@ -75,17 +77,24 @@ public class CustomerServiceImpl implements CustomerService {
     public Customer getCustomerWithAllRelations(Long id) {
         Customer customer = customerRepository.findById(id).orElse(null);
         if (customer != null) {
-            // Force initialization of lazy collections for GraphQL deep queries
-            Hibernate.initialize(customer.getContacts());
-            Hibernate.initialize(customer.getShipmentLocations());
-            Hibernate.initialize(customer.getShipments());
-            // Also initialize nested objects on shipments for full hierarchy
-            customer.getShipments().forEach(s -> {
-                Hibernate.initialize(s.getContact());
-                Hibernate.initialize(s.getShipmentLocation());
-                Hibernate.initialize(s.getServiceOffering());
-            });
+            initializeCustomerGraph(customer);
         }
         return customer;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void initializeCustomerGraph(Customer customer) {
+        if (customer == null) {
+            return;
+        }
+        Hibernate.initialize(customer.getContacts());
+        Hibernate.initialize(customer.getShipmentLocations());
+        Hibernate.initialize(customer.getShipments());
+        customer.getShipments().forEach(s -> {
+            Hibernate.initialize(s.getContact());
+            Hibernate.initialize(s.getShipmentLocation());
+            Hibernate.initialize(s.getServiceOffering());
+        });
     }
 }
