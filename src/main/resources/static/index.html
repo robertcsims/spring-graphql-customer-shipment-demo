@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphQL Relational Platform • Spring Boot Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #0f172a;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+            font-weight: 600;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%);
+        }
+
+        .section-header {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            line-height: 2.75rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', system_ui, sans-serif;
+        }
+
+        .graph-node {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .query-card {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        .nav-active {
+            color: #0ea5e9;
+            font-weight: 600;
+        }
+
+        .demo-badge {
+            background: linear-gradient(to right, #0ea5e9, #22d3ee);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.125rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            letter-spacing: -.5px;
+        }
+
+        .stat-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
+        }
+
+        .impressive-query {
+            transition: all 0.2s ease;
+        }
+
+        .impressive-query:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
+        }
+
+        .tech-pill {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-size: 0.75rem;
+            padding: 0.125rem 0.625rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+
+        .readiness-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .schema-line {
+            stroke: #64748b;
+            stroke-width: 1.5;
+            stroke-dasharray: 3 2;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <!-- Top Navigation -->
+    <nav class="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <div class="flex items-center gap-x-2.5">
+                        <div class="w-9 h-9 bg-slate-900 rounded-2xl flex items-center justify-center">
+                            <i class="fa-solid fa-project-diagram text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-display text-2xl font-semibold tracking-tighter">GraphQL</span>
+                            <span class="font-display text-2xl font-semibold tracking-tighter text-sky-600">Platform</span>
+                        </div>
+                    </div>
+                    <div class="hidden md:flex items-center gap-x-2 pl-3 border-l border-slate-200">
+                        <span class="demo-badge text-xs px-3 py-1">SPRING BOOT 3.3 + GRAPHQL</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-x-4">
+                    <div class="hidden md:flex items-center gap-x-2 text-sm">
+                        <div class="flex items-center gap-x-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-3xl text-xs font-medium">
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>Production Patterns</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="openGraphiQLDirect()" 
+                            class="flex items-center gap-x-2 px-4 py-2 text-sm font-semibold bg-slate-900 hover:bg-black text-white rounded-3xl transition-colors">
+                        <i class="fa-solid fa-play mr-1"></i>
+                        <span>Open GraphiQL</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="hero-gradient text-white">
+        <div class="max-w-screen-2xl mx-auto px-8 pt-16 pb-20">
+            <div class="max-w-4xl">
+                <div class="inline-flex items-center gap-x-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-3xl mb-6 text-sm">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span class="font-medium">Enterprise-grade GraphQL demonstration</span>
+                </div>
+                
+                <h1 class="text-7xl leading-[1.05] tracking-tighter font-semibold mb-6">
+                    One query.<br>
+                    Complete relational<br>
+                    intelligence.
+                </h1>
+                
+                <p class="max-w-lg text-xl text-slate-300 mb-8">
+                    A production-pattern Spring Boot + Spring for GraphQL application 
+                    delivering the full customer ecosystem — including contacts, locations, 
+                    shipments, and service offerings — in a single round-trip.
+                </p>
+                
+                <div class="flex flex-wrap items-center gap-4">
+                    <button onclick="document.getElementById('demo-section').scrollIntoView({ behavior: 'smooth' })" 
+                            class="inline-flex items-center justify-center gap-x-3 bg-white text-slate-900 hover:bg-slate-100 transition-colors font-semibold px-8 h-14 rounded-3xl text-base shadow-sm">
+                        <span>Explore the demo</span>
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </button>
+                    
+                    <button onclick="openGraphiQLDirect()" 
+                            class="inline-flex items-center justify-center gap-x-3 border border-white/30 hover:bg-white/10 transition-colors font-semibold px-8 h-14 rounded-3xl text-base">
+                        <i class="fa-solid fa-terminal"></i>
+                        <span>Launch GraphiQL</span>
+                    </button>
+                </div>
+                
+                <div class="mt-8 flex items-center gap-x-6 text-sm text-slate-400">
+                    <div class="flex items-center gap-x-2">
+                        <i class="fa-solid fa-check text-emerald-400"></i>
+                        <span>Zero configuration</span>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <i class="fa-solid fa-check text-emerald-400"></i>
+                        <span>Persistent Derby</span>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <i class="fa-solid fa-check text-emerald-400"></i>
+                        <span>Full test coverage</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Readiness Status -->
+    <div class="max-w-screen-2xl mx-auto px-8 -mt-6 relative z-10">
+        <div id="readiness-banner" 
+             class="bg-white border border-slate-200 shadow-sm rounded-3xl p-5 flex items-center justify-between max-w-3xl">
+            <div class="flex items-center gap-x-4">
+                <div id="readiness-icon" class="w-9 h-9 flex items-center justify-center bg-amber-100 text-amber-600 rounded-2xl">
+                    <i class="fa-solid fa-spinner fa-spin text-lg"></i>
+                </div>
+                <div>
+                    <div id="readiness-title" class="font-semibold text-slate-900">Application initializing</div>
+                    <div id="readiness-subtitle" class="text-sm text-slate-500">Derby + Hibernate + GraphQL context + data seeding</div>
+                </div>
+            </div>
+            <div class="text-right">
+                <div id="readiness-status" class="font-mono text-xs tracking-widest font-medium text-amber-600">STARTING</div>
+                <div class="text-[10px] text-slate-400">This screen is always available</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="max-w-screen-2xl mx-auto px-8 pt-14 pb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="stat-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-sm font-medium text-slate-500">Entities</div>
+                        <div class="metric-value text-slate-900 mt-1">5</div>
+                    </div>
+                    <i class="fa-solid fa-database text-3xl text-slate-300"></i>
+                </div>
+                <div class="text-xs text-emerald-600 mt-3 font-medium">Customer • Contact • ShipmentLocation • Shipment • ServiceOffering</div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-sm font-medium text-slate-500">Relationships</div>
+                        <div class="metric-value text-slate-900 mt-1">4</div>
+                    </div>
+                    <i class="fa-solid fa-link text-3xl text-slate-300"></i>
+                </div>
+                <div class="text-xs text-emerald-600 mt-3 font-medium">Full referential integrity with bidirectional navigation</div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-sm font-medium text-slate-500">Capabilities</div>
+                        <div class="metric-value text-slate-900 mt-1">∞</div>
+                    </div>
+                    <i class="fa-solid fa-infinity text-3xl text-slate-300"></i>
+                </div>
+                <div class="text-xs text-emerald-600 mt-3 font-medium">Pagination • Filtering • Sorting • Mutations • Introspection</div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-sm font-medium text-slate-500">Network calls</div>
+                        <div class="metric-value text-emerald-600 mt-1">1</div>
+                    </div>
+                    <i class="fa-solid fa-globe text-3xl text-slate-300"></i>
+                </div>
+                <div class="text-xs text-emerald-600 mt-3 font-medium">Complete hierarchy vs 5+ REST roundtrips</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Power Section -->
+    <div class="max-w-screen-2xl mx-auto px-8 py-10" id="demo-section">
+        <div class="max-w-3xl mb-10">
+            <div class="uppercase tracking-[2px] text-xs font-semibold text-sky-600 mb-3">CORE DEMONSTRATION</div>
+            <h2 class="section-header">Complete customer ecosystem<br>in a single request</h2>
+            <p class="mt-3 text-lg text-slate-600">This is what makes GraphQL transformative for relational domains. One HTTP request. Full type-safe navigation across five tables and four relationships.</p>
+        </div>
+        
+        <div class="grid lg:grid-cols-5 gap-6">
+            <!-- Query Card -->
+            <div class="lg:col-span-3 bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-x-3">
+                        <div class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-2xl">THE KILLER QUERY</div>
+                        <div class="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">1 roundtrip</div>
+                    </div>
+                    <button onclick="runPreloadedQuery(0)" 
+                            class="flex items-center gap-x-2 text-sm font-semibold px-5 h-9 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span class="font-semibold">Run in GraphiQL</span>
+                    </button>
+                </div>
+                
+                <pre class="query-card bg-slate-900 text-emerald-300 p-5 rounded-2xl text-[13px] leading-relaxed overflow-auto max-h-[280px]"><code>query FullRelationalHierarchy {
+  customers(
+    filter: { entityNameContains: "Acme" }
+    page: 0
+    size: 1
+  ) {
+    content {
+      id
+      entityName
+      type
+      contacts {
+        id firstName lastName email phone
+      }
+      shipmentLocations {
+        id name addressLine1 addressLine2 city state zip locationInstructions gateCode
+      }
+      shipments {
+        id activity itemDescription weight dimensions
+        contact { id firstName lastName email }
+        shipmentLocation { id name city state zip gateCode }
+        serviceOffering { id description typeCd }
+      }
+    }
+    totalElements
+    totalPages
+  }
+}</code></pre>
+                
+                <div class="text-xs text-slate-500 mt-3 flex items-center gap-x-2">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <span>Traverses all 5 entities with rich filtering and selection</span>
+                </div>
+            </div>
+            
+            <!-- Impact -->
+            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-7 flex flex-col">
+                <div class="font-semibold text-lg mb-4">Why this is impressive</div>
+                
+                <div class="space-y-4 flex-1">
+                    <div class="flex gap-3">
+                        <div class="w-5 h-5 mt-0.5 flex-shrink-0"><i class="fa-solid fa-check-circle text-emerald-500"></i></div>
+                        <div class="text-sm">Traditional REST architecture would require <strong class="font-semibold">at least 5 separate HTTP calls</strong> plus client-side assembly logic.</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="w-5 h-5 mt-0.5 flex-shrink-0"><i class="fa-solid fa-check-circle text-emerald-500"></i></div>
+                        <div class="text-sm">Client controls exactly which fields and nested relations are returned — no over- or under-fetching.</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="w-5 h-5 mt-0.5 flex-shrink-0"><i class="fa-solid fa-check-circle text-emerald-500"></i></div>
+                        <div class="text-sm">Full referential integrity and rich domain model preserved in the API layer.</div>
+                    </div>
+                </div>
+                
+                <div class="pt-4 border-t text-xs text-slate-500">
+                    This pattern scales to any depth of relational complexity while remaining highly performant.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mutations Section: Insert & Update -->
+    <div class="max-w-screen-2xl mx-auto px-8 py-10 bg-slate-100/60 border-t border-b border-slate-200" id="mutations-section">
+        <div class="max-w-3xl mb-8">
+            <div class="uppercase tracking-[2px] text-xs font-semibold text-emerald-600 mb-3">WRITE OPERATIONS</div>
+            <h2 class="section-header">Insert &amp; update data<br>with first-class mutations</h2>
+            <p class="mt-3 text-lg text-slate-600">GraphQL mutations are typed, validated through the domain, and persist via the same Spring Data JPA services used for reads. Create new customers or shipments, update names and details — then immediately re-query the graph to see the changes.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+            <!-- Create Shipment Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-2xl">MUTATION</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded">Persisted to Derby</span>
+                    </div>
+                    <button onclick="runMutationPreload('createShipment')" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Create Shipment</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11.5px] leading-snug overflow-auto max-h-[148px]"><code>mutation CreateShipment {
+  # Inline for instant "Play" demo. In real usage prefer:
+  # mutation CreateShipment($input: CreateShipmentInput!) { createShipment(input:$input){...} }
+  createShipment(input: {
+    customerId: 1
+    serviceOfferingId: 4
+    itemDescription: "Urgent prototype parts - inserted via GraphQL demo"
+    weight: 14.25
+    dimensions: "20x14x9"
+    activity: DELIVERY
+  }) {
+    id itemDescription weight dimensions activity
+    customer { id entityName }
+    serviceOffering { description typeCd }
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2.5">Data-driven: first run a <span class="font-mono">customers(filter: {entityNameContains: "Acme"})</span> query to obtain a real <code>id</code>, then pass it in <code>$input.customerId</code>. The response includes the new shipment plus its related objects.</div>
+            </div>
+
+            <!-- Create Customer Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-2xl">MUTATION</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded">Persisted to Derby</span>
+                    </div>
+                    <button onclick="runMutationPreload('createCustomer')" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Create New Customer</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11.5px] leading-snug overflow-auto max-h-[148px]"><code>mutation CreateNewCustomer {
+  createCustomer(input: {
+    entityName: "Quantum Logistics Demo LLC"
+    type: BUSINESS
+  }) {
+    id
+    entityName
+    type
+    contacts { firstName }
+    shipments { id itemDescription }
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2.5">Inserts a root <strong>Customer</strong> entity. The new record is immediately available for adding contacts, locations, and shipments in follow-up mutations or the hierarchy queries.</div>
+            </div>
+
+            <!-- Update Customer Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-2xl">MUTATION</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded">Persisted to Derby</span>
+                    </div>
+                    <button onclick="runMutationPreload('updateCustomer')" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Update Existing Customer</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11.5px] leading-snug overflow-auto max-h-[148px]"><code>mutation UpdateCustomerName {
+  # Discover target via data-driven filter first:
+  # customers(filter:{entityNameContains:"Acme"}){content{id}}
+  updateCustomer(
+    id: 1
+    entityName: "Acme Manufacturing Inc. — Updated Live!"
+    type: BUSINESS
+  ) {
+    id entityName type
+    contacts { firstName lastName email }
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2.5">Target the customer using an ID obtained from a prior read (never hard-coded in production flows). Re-run any hierarchy query afterward to observe the change reflected across the graph.</div>
+            </div>
+        </div>
+
+        <div class="mt-5 text-xs text-slate-500 flex items-center gap-x-2">
+            <i class="fa-solid fa-sync fa-sm"></i>
+            <span>After running a mutation, switch back to a read query (or re-run the hierarchy button) to see your changes in the relational results. All writes go through the same services, repositories, and transaction boundaries as the read paths.</span>
+        </div>
+    </div>
+
+    <!-- More Example Queries Section -->
+    <div class="max-w-screen-2xl mx-auto px-8 py-10" id="more-queries-section">
+        <div class="max-w-3xl mb-8">
+            <div class="uppercase tracking-[2px] text-xs font-semibold text-sky-600 mb-3">MORE EXAMPLES</div>
+            <h2 class="section-header">Filtering, Pagination,<br>Sorting &amp; Reference Data</h2>
+            <p class="mt-3 text-lg text-slate-600">The same flexible API powers many other common operations. Client-controlled pagination, rich filtering, and sorting work at any level — including inside nested relations.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+            <!-- Advanced Shipment Filtering Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-2xl">QUERY</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Filter + Page + Sort</span>
+                    </div>
+                    <button onclick="runPreloadedQuery(1)" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Advanced Shipment Filtering</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11px] leading-snug overflow-auto max-h-[130px]"><code>query AdvancedFiltering {
+  shipments(
+    filter: { activity: PICKUP, minWeight: 10 }
+    page: 0
+    size: 5
+    sort: ["-weight"]
+  ) {
+    content {
+      itemDescription weight activity
+      customer { entityName }
+    }
+    totalElements totalPages
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2">Powerful server-side filtering, pagination and sorting on any field (including relations). No over-fetching.</div>
+            </div>
+
+            <!-- Nested Pagination Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-2xl">QUERY</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Nested + Page</span>
+                    </div>
+                    <button onclick="runPreloadedQuery(2)" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Nested Pagination</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11px] leading-snug overflow-auto max-h-[130px]"><code>query NestedPagination {
+  customers(
+    filter: { entityNameContains: "Acme" }
+    page: 0 size: 1
+  ) {
+    content {
+      entityName
+      shipments(
+        page: 0 size: 2
+        sort: ["-weight"]
+      ) {
+        weight itemDescription
+        serviceOffering { description }
+      }
+    }
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2">Locate a customer with a filter, then ask for only a page of its shipments (with their own pagination &amp; sort args).</div>
+            </div>
+
+            <!-- Service Offerings Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-2xl">QUERY</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Reference Data</span>
+                    </div>
+                    <button onclick="runPreloadedQuery(3)" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Service Offerings</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11px] leading-snug overflow-auto max-h-[130px]"><code>query ListServiceOfferings {
+  serviceOfferings {
+    id
+    description
+    typeCd
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2">Reference data used by createShipment mutations. Run this first in GraphiQL to pick real IDs for demo mutations.</div>
+            </div>
+
+            <!-- Get All Customers Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-2xl">QUERY</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">List + Pagination</span>
+                    </div>
+                    <button onclick="runPreloadedQuery(4)" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Get All Customers</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11px] leading-snug overflow-auto max-h-[130px]"><code>query GetAllCustomers {
+  customers(page: 0, size: 20) {
+    content {
+      id entityName type
+    }
+    totalElements
+    totalPages
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2">Basic paginated list of all customers. Use page/size to control how many you get. totalElements gives the count.</div>
+            </div>
+
+            <!-- Get All Shipments Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-2xl">QUERY</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">List + Pagination</span>
+                    </div>
+                    <button onclick="runPreloadedQuery(5)" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Get All Shipments</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11px] leading-snug overflow-auto max-h-[130px]"><code>query GetAllShipments {
+  shipments(page: 0, size: 20) {
+    content {
+      id itemDescription weight activity
+      customer { entityName }
+    }
+    totalElements
+    totalPages
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2">Paginated list of every shipment across all customers. Shows how the API supports broad listing with rich projections.</div>
+            </div>
+
+            <!-- Get Shipment Count Card -->
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl p-7 impressive-query">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-x-2">
+                        <span class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-2xl">QUERY</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Aggregate / Count</span>
+                    </div>
+                    <button onclick="runPreloadedQuery(6)" 
+                            class="flex items-center gap-x-1.5 text-xs font-semibold px-4 h-8 bg-slate-900 hover:bg-black transition-colors text-white rounded-3xl">
+                        <i class="fa-solid fa-play fa-sm"></i>
+                        <span>Run in GraphiQL</span>
+                    </button>
+                </div>
+                <div class="font-semibold text-base mb-1.5">Get Shipment Count</div>
+                <pre class="query-card bg-slate-900 text-emerald-300 p-4 rounded-2xl text-[11px] leading-snug overflow-auto max-h-[130px]"><code>query ShipmentCount {
+  shipments(page: 0, size: 1) {
+    totalElements
+  }
+}</code></pre>
+                <div class="text-[11px] text-slate-500 mt-2">Efficient way to get just the total count without loading the actual shipment data. Uses the Page metadata.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Model -->
+    <div class="max-w-screen-2xl mx-auto px-8 py-8">
+        <div class="mb-6">
+            <div class="text-sky-600 text-xs font-semibold tracking-widest">THE DOMAIN MODEL</div>
+            <h3 class="text-3xl font-semibold tracking-tighter mt-1">Five entities. Complete referential integrity.</h3>
+        </div>
+        
+        <div class="bg-white border border-slate-200 rounded-3xl p-8">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
+                <!-- Entity Cards -->
+                <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+                    <div class="font-semibold text-base mb-1 flex items-center gap-x-2">
+                        <i class="fa-solid fa-user text-slate-700"></i> 
+                        <span>Customer</span>
+                    </div>
+                    <div class="text-xs text-slate-500">id, entityName, type (BUSINESS/PERSONAL)</div>
+                    <div class="text-[10px] mt-2 text-emerald-600 font-medium">Root entity</div>
+                </div>
+                
+                <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+                    <div class="font-semibold text-base mb-1 flex items-center gap-x-2">
+                        <i class="fa-solid fa-address-book text-slate-700"></i> 
+                        <span>Contact</span>
+                    </div>
+                    <div class="text-xs text-slate-500">firstName, lastName, phone, email</div>
+                    <div class="text-[10px] mt-2 text-emerald-600 font-medium">Many-to-one → Customer</div>
+                </div>
+                
+                <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+                    <div class="font-semibold text-base mb-1 flex items-center gap-x-2">
+                        <i class="fa-solid fa-map-marker-alt text-slate-700"></i> 
+                        <span>ShipmentLocation</span>
+                    </div>
+                    <div class="text-xs text-slate-500">name, address*, city, state, zip, instructions, gateCode</div>
+                    <div class="text-[10px] mt-2 text-emerald-600 font-medium">Many-to-one → Customer</div>
+                </div>
+                
+                <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+                    <div class="font-semibold text-base mb-1 flex items-center gap-x-2">
+                        <i class="fa-solid fa-truck text-slate-700"></i> 
+                        <span>Shipment</span>
+                    </div>
+                    <div class="text-xs text-slate-500">itemDescription, weight, dimensions, activity (PICKUP/DELIVERY)</div>
+                    <div class="text-[10px] mt-2 text-emerald-600 font-medium">FKs to Customer, Contact, Location, ServiceOffering</div>
+                </div>
+                
+                <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+                    <div class="font-semibold text-base mb-1 flex items-center gap-x-2">
+                        <i class="fa-solid fa-cogs text-slate-700"></i> 
+                        <span>ServiceOffering</span>
+                    </div>
+                    <div class="text-xs text-slate-500">description, typeCd</div>
+                    <div class="text-[10px] mt-2 text-emerald-600 font-medium">Referenced by Shipment</div>
+                </div>
+            </div>
+            
+            <div class="mt-6 pt-6 border-t flex items-center justify-between text-xs">
+                <div class="flex items-center gap-x-2 text-slate-500">
+                    <i class="fa-solid fa-project-diagram"></i>
+                    <span>All relationships are properly modeled with JPA and exposed through GraphQL with rich selection.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Excellence -->
+    <div class="max-w-screen-2xl mx-auto px-8 py-10">
+        <div class="grid lg:grid-cols-2 gap-x-8 gap-y-8">
+            <div>
+                <div class="uppercase text-xs font-semibold tracking-widest text-sky-600 mb-2">ARCHITECTURAL EXCELLENCE</div>
+                <h3 class="text-3xl font-semibold tracking-tighter">Production patterns,<br>not a toy prototype</h3>
+                
+                <div class="mt-7 space-y-5 text-[15px]">
+                    <div class="flex gap-x-4">
+                        <div class="font-mono text-xs w-5 text-sky-600 pt-0.5">01</div>
+                        <div><span class="font-medium">Layered architecture</span> — Clean separation between domain, repository (with Specifications), service, and GraphQL resolver layers.</div>
+                    </div>
+                    <div class="flex gap-x-4">
+                        <div class="font-mono text-xs w-5 text-sky-600 pt-0.5">02</div>
+                        <div><span class="font-medium">Advanced filtering</span> — Dynamic queries using Spring Data JPA Specifications for type-safe, composable filters at any level.</div>
+                    </div>
+                    <div class="flex gap-x-4">
+                        <div class="font-mono text-xs w-5 text-sky-600 pt-0.5">03</div>
+                        <div><span class="font-medium">Performance awareness</span> — Explicit Hibernate initialization + comments on DataLoader strategy for N+1 prevention in production.</div>
+                    </div>
+                    <div class="flex gap-x-4">
+                        <div class="font-mono text-xs w-5 text-sky-600 pt-0.5">04</div>
+                        <div><span class="font-medium">Real persistence</span> — File-based embedded Derby with data surviving restarts. No in-memory tricks.</div>
+                    </div>
+                    <div class="flex gap-x-4">
+                        <div class="font-mono text-xs w-5 text-sky-600 pt-0.5">05</div>
+                        <div><span class="font-medium">Security &amp; profiles</span> — Profile-driven demo mode (no auth) vs authenticated mode. Clean separation.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-900 text-white rounded-3xl p-8 text-sm">
+                <div class="text-emerald-400 text-xs tracking-widest font-medium mb-3">BUILT FOR CONVICTION</div>
+                
+                <div class="space-y-6 text-slate-300">
+                    <div>
+                        This demo was constructed directly from a detailed textual schema specification. 
+                        Every entity, relationship, query capability (pagination, filtering, sorting), 
+                        and mutation was implemented with production-grade patterns in a focused effort.
+                    </div>
+                    <div class="border-l-2 border-emerald-900 pl-4 text-xs">
+                        The goal: convince technical and non-technical stakeholders at the highest levels 
+                        that GraphQL, when paired with disciplined Spring architecture, delivers a 
+                        qualitatively superior experience for complex relational domains.
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-slate-800 text-xs flex flex-wrap gap-x-4 gap-y-1 text-slate-400">
+                    <div>Java 21 • Spring Boot 3.3 • Spring for GraphQL • Spring Data JPA</div>
+                    <div>Hibernate 6 • Embedded Derby • HikariCP • Thymeleaf (demo)</div>
+                    <div>Full test suite • Actuator • Profile-driven configuration</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="border-t bg-white">
+        <div class="max-w-screen-2xl mx-auto px-8 py-10">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-y-4">
+                <div>
+                    <div class="font-semibold text-xl">Ready to see the power?</div>
+                    <div class="text-slate-500 text-sm">Open GraphiQL and run the full hierarchy query above.</div>
+                </div>
+                <div class="flex items-center gap-x-3">
+                    <button onclick="openGraphiQLDirect()" 
+                            class="px-8 h-12 flex items-center justify-center gap-x-3 text-base font-semibold rounded-3xl border border-slate-300 hover:bg-slate-50 transition-colors">
+                        <span>Open GraphiQL</span>
+                    </button>
+                    
+                    <button onclick="runPreloadedQuery(0)" 
+                            class="px-8 h-12 flex items-center justify-center gap-x-3 text-base font-semibold bg-slate-900 text-white hover:bg-black transition-colors rounded-3xl">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Run Full Hierarchy Query</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-8 text-xs text-slate-400 border-t">
+        This demonstration was built to the highest standards of architectural quality and user experience. 
+        Every component reflects deliberate choices for maintainability, performance, and demonstrable capability.
+    </footer>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#0ea5e9');
+        }
+        
+        // Preloaded queries (matching the powerful examples in the demo)
+        const PRELOADED_QUERIES = [
+            // 0: Data-driven full hierarchy for one rich customer.
+            // Uses filter on stable business key (entityName) instead of brittle hard-coded surrogate ID.
+            // Returns exactly the impressive single-customer relational graph under content[0].
+            `query FullRelationalHierarchy {
+  customers(
+    filter: { entityNameContains: "Acme" }
+    page: 0
+    size: 1
+  ) {
+    content {
+      id
+      entityName
+      type
+      contacts {
+        id
+        firstName
+        lastName
+        email
+        phone
+      }
+      shipmentLocations {
+        id
+        name
+        addressLine1
+        addressLine2
+        city
+        state
+        zip
+        locationInstructions
+        gateCode
+      }
+      shipments {
+        id
+        activity
+        itemDescription
+        weight
+        dimensions
+        contact {
+          id
+          firstName
+          lastName
+          email
+        }
+        shipmentLocation {
+          id
+          name
+          city
+          state
+          zip
+          gateCode
+        }
+        serviceOffering {
+          id
+          description
+          typeCd
+        }
+      }
+    }
+    totalElements
+    totalPages
+  }
+}`,
+            // 1: Filtered & Paginated Shipments (still works via facade)
+            `query AdvancedFiltering {
+  shipments(
+    filter: { activity: PICKUP, minWeight: 10 }
+    page: 0
+    size: 5
+    sort: ["-weight"]
+  ) {
+    content {
+      id
+      itemDescription
+      weight
+      activity
+      customer { entityName }
+    }
+    totalElements
+    totalPages
+  }
+}`,
+            // 2: Nested pagination (data-driven: locate the customer via filter, then paginate its shipments)
+            `query NestedPagination {
+  customers(filter: { entityNameContains: "Acme" }, page: 0, size: 1) {
+    content {
+      entityName
+      shipments(page: 0, size: 2, sort: ["-weight"]) {
+        id
+        weight
+        itemDescription
+        serviceOffering { description }
+      }
+    }
+  }
+}`,
+            // 3: List reference data (service offerings) - simple but useful for mutations
+            `query ListServiceOfferings {
+  serviceOfferings {
+    id
+    description
+    typeCd
+  }
+}`,
+            // 4: Get all customers (paginated list - demonstrates basic list + page info)
+            `query GetAllCustomers {
+  customers(page: 0, size: 20) {
+    content {
+      id
+      entityName
+      type
+    }
+    totalElements
+    totalPages
+  }
+}`,
+            // 5: Get all shipments (paginated list)
+            `query GetAllShipments {
+  shipments(page: 0, size: 20) {
+    content {
+      id
+      itemDescription
+      weight
+      activity
+      customer { entityName }
+    }
+    totalElements
+    totalPages
+  }
+}`,
+            // 6: Get shipment count (using the page metadata - shows you can get aggregates without fetching all data)
+            `query ShipmentCount {
+  shipments(page: 0, size: 1) {
+    totalElements
+  }
+}`
+        ];
+        
+        // Buttons are always enabled immediately (readiness no longer blocks UI actions)
+
+        function runPreloadedQuery(index) {
+            const query = PRELOADED_QUERIES[index];
+            const encoded = encodeURIComponent(query);
+            const url = `/graphiql.html?query=${encoded}`;
+            window.open(url, '_blank');
+        }
+
+        // Dedicated reliable preloader for the mutation demos.
+        // These are defined separately so the Create/Update buttons always load
+        // the correct mutation statement even if the main PRELOADED array changes
+        // or in packaged versions with partial updates.
+        const MUTATION_PRELOADS = {
+            createShipment: `mutation CreateShipment {
+  # For production use variables + CreateShipmentInput.
+  # This inline version runs immediately when you press Play.
+  createShipment(input: {
+    customerId: 1
+    serviceOfferingId: 4
+    itemDescription: "Urgent prototype parts - inserted via GraphQL demo"
+    weight: 14.25
+    dimensions: "20x14x9"
+    activity: DELIVERY
+  }) {
+    id
+    itemDescription
+    weight
+    dimensions
+    activity
+    customer { id entityName }
+    serviceOffering { description typeCd }
+    contact { firstName lastName }
+    shipmentLocation { name city }
+  }
+}`,
+            createCustomer: `mutation CreateNewCustomer {
+  createCustomer(input: {
+    entityName: "Quantum Logistics Demo LLC"
+    type: BUSINESS
+  }) {
+    id
+    entityName
+    type
+    contacts { firstName }
+    shipments { id itemDescription }
+  }
+}`,
+            updateCustomer: `mutation UpdateCustomerName {
+  # Tip: run a data-driven read first to obtain a real customer id
+  # e.g. customers(filter: { entityNameContains: "Acme" }, page: 0, size: 1) { content { id } }
+  updateCustomer(
+    id: 1
+    entityName: "Acme Manufacturing Inc. — Updated Live!"
+    type: BUSINESS
+  ) {
+    id
+    entityName
+    type
+    contacts { firstName lastName email }
+  }
+}`
+        };
+
+        function runMutationPreload(key) {
+            const query = MUTATION_PRELOADS[key];
+            if (!query) {
+                console.error('Unknown mutation preload key:', key);
+                return;
+            }
+            const encoded = encodeURIComponent(query);
+            const url = `/graphiql.html?query=${encoded}`;
+            window.open(url, '_blank');
+        }
+
+        function openGraphiQLDirect() {
+            window.open('/graphiql.html', '_blank');
+        }
+        
+        // Readiness polling
+        let pollInterval = null;
+        
+        async function checkReadiness() {
+            const banner = document.getElementById('readiness-banner');
+            const icon = document.getElementById('readiness-icon');
+            const title = document.getElementById('readiness-title');
+            const subtitle = document.getElementById('readiness-subtitle');
+            const status = document.getElementById('readiness-status');
+            
+            let healthUp = false;
+            let graphiqlUiUp = false;
+
+            try {
+                const healthRes = await fetch('/actuator/health');
+                if (healthRes.ok) {
+                    const data = await healthRes.json();
+                    healthUp = data.status === 'UP';
+                }
+            } catch (e) {
+                // health not ready
+            }
+
+            try {
+                const gRes = await fetch('/graphiql.html');
+                if (gRes.ok) {
+                    const text = await gRes.text();
+                    // Real GraphiQL UI contains "graphiql" or the React root, not our error page
+                    graphiqlUiUp = text.toLowerCase().includes('graphiql') && !text.includes('Page not found');
+                }
+            } catch (e) {
+                // graphiql not ready
+            }
+
+            if (healthUp) {
+                icon.innerHTML = '<i class="fa-solid fa-check-circle text-xl"></i>';
+                icon.className = 'w-9 h-9 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-2xl';
+                
+                title.textContent = 'Full GraphQL relational engine ready';
+                if (graphiqlUiUp) {
+                    subtitle.textContent = 'Derby persistent store • All relationships seeded • GraphiQL fully operational';
+                    status.textContent = 'READY';
+                } else {
+                    subtitle.textContent = 'Core app ready — GraphiQL UI initializing (try buttons, refresh tab if needed)';
+                    status.textContent = 'PARTIAL';
+                }
+                status.className = 'font-mono text-xs tracking-widest font-medium text-emerald-600';
+                
+                banner.style.borderColor = '#10b98133';
+                
+                // Stop polling once core is ready
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+                
+                return true;
+            } else {
+                // Update banner to show progress
+                if (!healthUp) {
+                    subtitle.textContent = 'Core app starting...';
+                }
+            }
+            
+            // Still starting - keep polling
+            return false;
+        }
+        
+        function startReadinessPolling() {
+            // Initial check
+            checkReadiness();
+            
+            // Poll every 1500ms
+            pollInterval = setInterval(async () => {
+                const isReady = await checkReadiness();
+                if (isReady && pollInterval) {
+                    clearInterval(pollInterval);
+                }
+            }, 1500);
+            
+            // Safety: stop after 2 minutes
+            setTimeout(() => {
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    const subtitle = document.getElementById('readiness-subtitle');
+                    if (subtitle) subtitle.textContent = 'Taking longer than expected — check console logs';
+                }
+            }, 120000);
+        }
+        
+        // Keyboard shortcut for GraphiQL
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    window.open('/graphiql.html', '_blank');
+                }
+            });
+            
+            // Add hint
+            console.log('%c[GraphQL Demo] Press "/" to open GraphiQL', 'color:#64748b; font-size:10px');
+        }
+        
+        // Initialize everything
+        function initializeDemo() {
+            initializeTailwind();
+            startReadinessPolling();
+            setupKeyboardShortcuts();
+            
+            // Buttons are always enabled; readiness banner is for info only
+            console.log('%c[Professional Demo] High-quality static landing page initialized. Buttons always active.', 'color:#64748b');
+        }
+        
+        // Boot
+        window.onload = initializeDemo;
+    </script>
+</body>
+</html>

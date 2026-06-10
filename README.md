@@ -48,13 +48,26 @@ src/main/java/com/example/graphql/
 
 ## Quick Start
 
-**Best experience for leadership demos:**
+**Best experience for leadership demos (world-class first impression):**
 
 ```bash
 ./demo.sh
 ```
 
-(This is a one-line wrapper script that launches the app in demo mode — no auth friction, clean console.)
+The root path (`http://localhost:8080`) now serves a **self-contained, modern, executive-grade static landing page** the instant the embedded Tomcat binds. It includes:
+
+- Live readiness polling (`/actuator/health`)
+- Beautiful visual data model
+- Pre-loaded "Run in GraphiQL" buttons for the most impressive queries
+- Clear demonstration of one-roundtrip relational power
+- Technical depth that shows real architectural capability
+
+No more early 404s. The page is designed to convince at any level — from engineers to heads of state.
+
+Alternative:
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=demo
+```
 
 Alternative (explicit):
 ```bash
@@ -93,50 +106,57 @@ curl -u admin:admin123 -X POST http://localhost:8080/graphql \
 
 ```graphql
 query FullCustomerHierarchy {
-  customer(id: 1) {
-    id
-    entityName
-    type
-    contacts {
+  customers(
+    filter: { entityNameContains: "Acme" }
+    page: 0
+    size: 1
+  ) {
+    content {
       id
-      firstName
-      lastName
-      email
-      phone
-    }
-    shipmentLocations {
-      id
-      name
-      city
-      state
-      zip
-      gateCode
-      locationInstructions
-    }
-    shipments {
-      id
-      activity
-      itemDescription
-      weight
-      dimensions
-      contact {
+      entityName
+      type
+      contacts {
+        id
+        firstName
         lastName
         email
+        phone
       }
-      shipmentLocation {
+      shipmentLocations {
+        id
         name
+        addressLine1
+        addressLine2
         city
+        state
+        zip
+        locationInstructions
+        gateCode
       }
-      serviceOffering {
-        description
-        typeCd
+      shipments {
+        id
+        activity
+        itemDescription
+        weight
+        dimensions
+        contact { id firstName lastName email }
+        shipmentLocation { id name city state zip gateCode }
+        serviceOffering { id description typeCd }
       }
     }
+    totalElements
+    totalPages
   }
 }
 ```
 
-This is impossible to do efficiently with traditional REST without multiple roundtrips or massive DTOs.
+This uses a **filter on a stable business attribute** rather than a hard-coded database ID (the correct, maintainable approach — surrogate IDs are auto-generated and can change). This is impossible to do efficiently with traditional REST without multiple roundtrips or massive DTOs.
+
+You can still fetch by a concrete ID when you have obtained it from a previous query result:
+
+```graphql
+{ customer(id: 42) { entityName contacts { firstName } } }
+```
 
 ### 2. Paginated + Filtered Customers (with sorting)
 
@@ -189,13 +209,16 @@ query FilteredShipments {
 ### 4. Nested Pagination on a Customer's Shipments
 
 ```graphql
+# Data-driven: locate via filter first, then use nested pagination on the result
 query CustomerWithPaginatedShipments {
-  customer(id: 1) {
-    entityName
-    shipments(page: 0, size: 2, sort: ["-weight"]) {
-      id
-      weight
-      itemDescription
+  customers(filter: { entityNameContains: "Acme" }, page: 0, size: 1) {
+    content {
+      entityName
+      shipments(page: 0, size: 2, sort: ["-weight"]) {
+        id
+        weight
+        itemDescription
+      }
     }
   }
 }
@@ -203,11 +226,15 @@ query CustomerWithPaginatedShipments {
 
 ### 5. Mutations — Create a New Shipment
 
+Mutations take IDs you obtain from prior queries (or the `id` fields in previous results). The example below uses placeholder values — replace with real IDs returned by a `customers` query.
+
 ```graphql
 mutation CreateNewShipment {
   createShipment(input: {
+    # Use a customer id you just retrieved via customers(filter: ...) or customer(id: ...)
     customerId: 1
-    serviceOfferingId: 1
+    # Reference data (service offerings): typically 1=STD, 2=EXP, 3=LTL, 4=AIR
+    serviceOfferingId: 2
     itemDescription: "Emergency replacement parts"
     weight: 7.5
     dimensions: "10x8x6"

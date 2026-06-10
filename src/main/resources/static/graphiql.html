@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GraphiQL • Customer Shipment Demo</title>
+  <link rel="stylesheet" href="https://unpkg.com/graphiql@3/graphiql.min.css" />
+  <style>
+    body { margin: 0; height: 100vh; }
+    #graphiql { height: 100%; }
+    .top-bar { 
+      background: #0f172a; color: white; padding: 8px 16px; 
+      font-family: system-ui; font-size: 14px; display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid #1e2937;
+    }
+    .top-bar a { color: #38bdf8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <strong>GraphiQL</strong> — Spring Boot + Spring for GraphQL Demo
+    <span style="flex:1"></span>
+    <a href="/" target="_self">← Back to demo landing</a>
+    <span style="color:#64748b">| Preloaded queries available from the landing page</span>
+  </div>
+  <div id="graphiql" style="height: calc(100vh - 41px);"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/graphiql@3/graphiql.min.js"></script>
+
+  <script>
+    const fetcher = async (graphQLParams) => {
+      const response = await fetch('/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(graphQLParams),
+      });
+      return response.json();
+    };
+
+    // Support preloading via ?query=... from the landing page buttons.
+    // We use a *controlled* `query` prop + `storage: null` when a preload is present.
+    // This prevents GraphiQL's internal localStorage (shared across all tabs on localhost:8080)
+    // from restoring a previous query (e.g. the first mutation you clicked) and overwriting
+    // the one the button intended to load.
+    // Without this, every subsequent button click would show the first preloaded query
+    // until you closed the browser (clearing the storage effect in practice).
+    const params = new URLSearchParams(window.location.search);
+    const preloadedQuery = params.get('query');
+    const initialQuery = preloadedQuery 
+      ? decodeURIComponent(preloadedQuery)
+      : `query FullRelationalHierarchy {
+  customers(
+    filter: { entityNameContains: "Acme" }
+    page: 0
+    size: 1
+  ) {
+    content {
+      id
+      entityName
+      type
+      contacts { id firstName lastName email phone }
+      shipmentLocations { id name city state zip gateCode }
+      shipments {
+        id activity itemDescription weight dimensions
+        contact { lastName }
+        shipmentLocation { name city }
+        serviceOffering { description typeCd }
+      }
+    }
+    totalElements
+    totalPages
+  }
+}`;
+
+    const root = ReactDOM.createRoot(document.getElementById('graphiql'));
+    root.render(
+      React.createElement(GraphiQL, {
+        fetcher: fetcher,
+        // When coming from a landing page button, force the exact query and disable
+        // GraphiQL's persistence so each button always loads its own distinct example.
+        ...(preloadedQuery
+          ? { query: initialQuery, storage: null }
+          : { defaultQuery: initialQuery }),
+        headerEditorEnabled: true,
+      })
+    );
+
+    // Optional: if query param present, focus the play button hint
+    if (preloadedQuery) {
+      console.log('%c[GraphiQL] Preloaded query from landing page (storage disabled for this tab). Press the play button or Ctrl+Enter to run.', 'color:#64748b');
+    }
+  </script>
+</body>
+</html>
