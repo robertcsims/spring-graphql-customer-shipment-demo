@@ -21,6 +21,9 @@ Thumbs.db
 # Secrets (none here but good practice)
 *.env
 *.pem
+<<<<<<< HEAD
 
 dist/
 
+=======
+>>>>>>> origin/main

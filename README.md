@@ -48,12 +48,17 @@ src/main/java/com/example/graphql/
 
 ## Quick Start
 
+<<<<<<< HEAD
 **Best experience for leadership demos (world-class first impression):**
+=======
+**Best experience for leadership demos:**
+>>>>>>> origin/main
 
 ```bash
 ./demo.sh
 ```
 
+<<<<<<< HEAD
 The root path (`http://localhost:8080`) now serves a **self-contained, modern, executive-grade static landing page** the instant the embedded Tomcat binds. It includes:
 
 - Live readiness polling (`/actuator/health`)
@@ -68,6 +73,9 @@ Alternative:
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=demo
 ```
+=======
+(This is a one-line wrapper script that launches the app in demo mode — no auth friction, clean console.)
+>>>>>>> origin/main
 
 Alternative (explicit):
 ```bash
@@ -106,6 +114,7 @@ curl -u admin:admin123 -X POST http://localhost:8080/graphql \
 
 ```graphql
 query FullCustomerHierarchy {
+<<<<<<< HEAD
   customers(
     filter: { entityNameContains: "Acme" }
     page: 0
@@ -146,10 +155,52 @@ query FullCustomerHierarchy {
     }
     totalElements
     totalPages
+=======
+  customer(id: 1) {
+    id
+    entityName
+    type
+    contacts {
+      id
+      firstName
+      lastName
+      email
+      phone
+    }
+    shipmentLocations {
+      id
+      name
+      city
+      state
+      zip
+      gateCode
+      locationInstructions
+    }
+    shipments {
+      id
+      activity
+      itemDescription
+      weight
+      dimensions
+      contact {
+        lastName
+        email
+      }
+      shipmentLocation {
+        name
+        city
+      }
+      serviceOffering {
+        description
+        typeCd
+      }
+    }
+>>>>>>> origin/main
   }
 }
 ```
 
+<<<<<<< HEAD
 This uses a **filter on a stable business attribute** rather than a hard-coded database ID (the correct, maintainable approach — surrogate IDs are auto-generated and can change). This is impossible to do efficiently with traditional REST without multiple roundtrips or massive DTOs.
 
 You can still fetch by a concrete ID when you have obtained it from a previous query result:
@@ -157,6 +208,9 @@ You can still fetch by a concrete ID when you have obtained it from a previous q
 ```graphql
 { customer(id: 42) { entityName contacts { firstName } } }
 ```
+=======
+This is impossible to do efficiently with traditional REST without multiple roundtrips or massive DTOs.
+>>>>>>> origin/main
 
 ### 2. Paginated + Filtered Customers (with sorting)
 
@@ -209,6 +263,7 @@ query FilteredShipments {
 ### 4. Nested Pagination on a Customer's Shipments
 
 ```graphql
+<<<<<<< HEAD
 # Data-driven: locate via filter first, then use nested pagination on the result
 query CustomerWithPaginatedShipments {
   customers(filter: { entityNameContains: "Acme" }, page: 0, size: 1) {
@@ -219,6 +274,15 @@ query CustomerWithPaginatedShipments {
         weight
         itemDescription
       }
+=======
+query CustomerWithPaginatedShipments {
+  customer(id: 1) {
+    entityName
+    shipments(page: 0, size: 2, sort: ["-weight"]) {
+      id
+      weight
+      itemDescription
+>>>>>>> origin/main
     }
   }
 }
@@ -226,6 +290,7 @@ query CustomerWithPaginatedShipments {
 
 ### 5. Mutations — Create a New Shipment
 
+<<<<<<< HEAD
 Mutations take IDs you obtain from prior queries (or the `id` fields in previous results). The example below uses placeholder values — replace with real IDs returned by a `customers` query.
 
 ```graphql
@@ -235,6 +300,13 @@ mutation CreateNewShipment {
     customerId: 1
     # Reference data (service offerings): typically 1=STD, 2=EXP, 3=LTL, 4=AIR
     serviceOfferingId: 2
+=======
+```graphql
+mutation CreateNewShipment {
+  createShipment(input: {
+    customerId: 1
+    serviceOfferingId: 1
+>>>>>>> origin/main
     itemDescription: "Emergency replacement parts"
     weight: 7.5
     dimensions: "10x8x6"
