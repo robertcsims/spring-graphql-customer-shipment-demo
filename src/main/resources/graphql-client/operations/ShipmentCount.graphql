@@ -1,0 +1,5 @@
+query ShipmentCount {
+  shipments(page: 0, size: 1) {
+    totalElements
+  }
+}

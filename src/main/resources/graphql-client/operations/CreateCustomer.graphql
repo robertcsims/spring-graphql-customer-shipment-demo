@@ -1,0 +1,14 @@
+mutation CreateCustomer($input: CreateCustomerInput!) {
+  createCustomer(input: $input) {
+    id
+    entityName
+    type
+    contacts {
+      firstName
+    }
+    shipments {
+      id
+      itemDescription
+    }
+  }
+}

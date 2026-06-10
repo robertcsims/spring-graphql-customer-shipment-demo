@@ -1,0 +1,25 @@
+mutation CreateShipment($input: CreateShipmentInput!) {
+  createShipment(input: $input) {
+    id
+    itemDescription
+    weight
+    dimensions
+    activity
+    customer {
+      id
+      entityName
+    }
+    serviceOffering {
+      description
+      typeCd
+    }
+    contact {
+      firstName
+      lastName
+    }
+    shipmentLocation {
+      name
+      city
+    }
+  }
+}

@@ -1,0 +1,12 @@
+mutation UpdateCustomer($id: ID!, $entityName: String!, $type: CustomerType!) {
+  updateCustomer(id: $id, entityName: $entityName, type: $type) {
+    id
+    entityName
+    type
+    contacts {
+      firstName
+      lastName
+      email
+    }
+  }
+}

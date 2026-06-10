@@ -19,6 +19,7 @@
 
     <properties>
         <java.version>21</java.version>
+        <graphql.codegen.version>5.10.0</graphql.codegen.version>
     </properties>
 
     <dependencies>
@@ -52,6 +53,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Generated GraphQL typed client runtime -->
+        <dependency>
+            <groupId>io.github.kobylynskyi</groupId>
+            <artifactId>graphql-java-codegen</artifactId>
+            <version>${graphql.codegen.version}</version>
         </dependency>
 
         <!-- Embedded Derby with file persistence -->
@@ -91,6 +99,54 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>io.github.kobylynskyi</groupId>
+                <artifactId>graphql-codegen-maven-plugin</artifactId>
+                <version>${graphql.codegen.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-graphql-client</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <graphqlSchemaPaths>
+                                <graphqlSchemaPath>${project.basedir}/src/main/resources/graphql/schema.graphqls</graphqlSchemaPath>
+                            </graphqlSchemaPaths>
+                            <graphqlDocumentsPaths>
+                                <graphqlDocumentPath>${project.basedir}/src/main/resources/graphql-client/operations</graphqlDocumentPath>
+                            </graphqlDocumentsPaths>
+                            <outputDir>${project.build.directory}/generated-sources/graphql-client</outputDir>
+                            <modelPackageName>com.example.graphql.client.generated.model</modelPackageName>
+                            <apiPackageName>com.example.graphql.client.generated.api</apiPackageName>
+                            <generateApis>false</generateApis>
+                            <generateClient>true</generateClient>
+                            <generateToString>true</generateToString>
+                            <generateBuilder>true</generateBuilder>
+                            <modelValidationAnnotation>@jakarta.validation.constraints.NotNull</modelValidationAnnotation>
+
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-graphql-client-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/graphql-client</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

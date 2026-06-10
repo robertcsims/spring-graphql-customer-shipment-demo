@@ -1,0 +1,20 @@
+query AdvancedFiltering {
+  shipments(
+    filter: { activity: PICKUP, minWeight: 10 }
+    page: 0
+    size: 5
+    sort: ["-weight"]
+  ) {
+    content {
+      id
+      itemDescription
+      weight
+      activity
+      customer {
+        entityName
+      }
+    }
+    totalElements
+    totalPages
+  }
+}

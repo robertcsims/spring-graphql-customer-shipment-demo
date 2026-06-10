@@ -1,0 +1,15 @@
+query GetAllShipments {
+  shipments(page: 0, size: 20) {
+    content {
+      id
+      itemDescription
+      weight
+      activity
+      customer {
+        entityName
+      }
+    }
+    totalElements
+    totalPages
+  }
+}

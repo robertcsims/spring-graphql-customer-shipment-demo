@@ -1,0 +1,51 @@
+query FullRelationalHierarchy($entityName: String!) {
+  customers(filter: { entityNameContains: $entityName }, page: 0, size: 1) {
+    content {
+      id
+      entityName
+      type
+      contacts {
+        id
+        firstName
+        lastName
+        email
+        phone
+      }
+      shipmentLocations {
+        id
+        name
+        addressLine1
+        city
+        state
+        zip
+        gateCode
+      }
+      shipments {
+        id
+        activity
+        itemDescription
+        weight
+        dimensions
+        contact {
+          id
+          firstName
+          lastName
+          email
+        }
+        shipmentLocation {
+          id
+          name
+          city
+          state
+        }
+        serviceOffering {
+          id
+          description
+          typeCd
+        }
+      }
+    }
+    totalElements
+    totalPages
+  }
+}

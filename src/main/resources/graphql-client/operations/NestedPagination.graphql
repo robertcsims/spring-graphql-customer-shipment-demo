@@ -1,0 +1,15 @@
+query NestedPagination($entityName: String!) {
+  customers(filter: { entityNameContains: $entityName }, page: 0, size: 1) {
+    content {
+      entityName
+      shipments(page: 0, size: 2, sort: ["-weight"]) {
+        id
+        weight
+        itemDescription
+        serviceOffering {
+          description
+        }
+      }
+    }
+  }
+}

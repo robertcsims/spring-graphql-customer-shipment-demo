@@ -1,0 +1,16 @@
+query FindAcmeCustomer($entityName: String!) {
+  customers(filter: { entityNameContains: $entityName }, page: 0, size: 1) {
+    content {
+      id
+      entityName
+      contacts {
+        id
+        firstName
+      }
+      shipmentLocations {
+        id
+        name
+      }
+    }
+  }
+}

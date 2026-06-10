@@ -1,0 +1,11 @@
+query GetAllCustomers {
+  customers(page: 0, size: 20) {
+    content {
+      id
+      entityName
+      type
+    }
+    totalElements
+    totalPages
+  }
+}
